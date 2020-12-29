@@ -55,13 +55,13 @@ def get_player(player, current_round):
     player_name = get_token_name(player)
     if current_round[player_name + BANKRUPT]:
         data_list = {
+            'Position': game_board[current_round[player_name + POS]].name,
             'Bankrupt': 'True',
         }
     else:
         data_list = {
             'Position': game_board[current_round[player_name + POS]].name,
             'Cash': current_round[player_name + CASH],
-            'Bankrupt': current_round[player_name + BANKRUPT],
             'In Jail': current_round[player_name + IN_JAIL],
             'Jail Card': current_round[player_name + GET_OUT_OF_JAIL],
             'Chance Move': current_round[player_name + CHANCE_MOVE],

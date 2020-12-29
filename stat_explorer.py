@@ -9,7 +9,8 @@ def stat_explorer(num_players):
     global data, board_spaces
     st.title('Mpoly Junior Game statistics explorer')
     st.write("""
-    We play 5,000,000 games. Use the radio buttons at the sidebar to change the number of players in the game.
+    We play 5,000,000 games and see what we can find. 
+    Use the radio buttons at the sidebar to change the number of players in the game.
     """)
     with st.beta_expander('Notes'):
         st.write("""
