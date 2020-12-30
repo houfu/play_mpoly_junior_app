@@ -1,8 +1,9 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
+from numpy import nan
 
-from board import game_board
+from board import game_board, JAIL
 from classes import get_token_name, WIN_RATE, POWER, POS, CASH, BANKRUPT, IN_JAIL, GET_OUT_OF_JAIL, CHANCE_MOVE, Color, \
     OWNER
 
@@ -49,26 +50,6 @@ def make_power_chart(selected_game, num_players):
         height=300
     )
     return power_chart
-
-
-def get_player(player, current_round):
-    player_name = get_token_name(player)
-    if current_round[player_name + BANKRUPT]:
-        data_list = {
-            'Position': game_board[current_round[player_name + POS]].name,
-            'Bankrupt': 'True',
-        }
-    else:
-        data_list = {
-            'Position': game_board[current_round[player_name + POS]].name,
-            'Cash': current_round[player_name + CASH],
-            'In Jail': current_round[player_name + IN_JAIL],
-            'Jail Card': current_round[player_name + GET_OUT_OF_JAIL],
-            'Chance Move': current_round[player_name + CHANCE_MOVE],
-            'Win %': round(current_round[player_name + WIN_RATE] * 100, 2),
-            'Power': current_round[player_name + POWER],
-        }
-    return pd.Series(data_list)
 
 
 def game_explorer(num_players):
@@ -143,13 +124,22 @@ def board_spaces(current_round, num_players):
             with col:
                 st.write(f"**{game_board[i].name}**")
                 if game_board[i].color not in [Color.NA, Color.CHANCE]:
-                    st.write(f"Owner: {current_round[game_board[i].name + OWNER]}",
-                             f"Price/Rent: {game_board[i].price}",
-                             f"Color: {game_board[i].color}")
+                    owner = current_round[game_board[i].name + OWNER] if current_round[
+                                                                             game_board[
+                                                                                 i].name + OWNER] is not nan else 'BANK'
+                    st.write(
+                        f"Owner: {owner}",
+                        f"Price/Rent: {game_board[i].price}",
+                        f"Color: {game_board[i].color}")
                 players_pos = [get_token_name(player) for player in range(num_players) if
                                current_round[get_token_name(player) + POS] == i and not current_round[
                                    get_token_name(player) + BANKRUPT]]
                 if len(players_pos) > 0:
+                    if game_board[i].name == JAIL:
+                        players_pos = [
+                            player_pos + " (In Jail)" if current_round[
+                                player_pos + IN_JAIL] else player_pos + ' (Just visiting)'
+                            for player_pos in players_pos]
                     st.write(f"Player(s) here: **{' '.join(players_pos)}**")
                 i += 1
         return i
@@ -164,21 +154,37 @@ def board_spaces(current_round, num_players):
 
 
 def get_player_list(current_round, num_players):
-    col1, col2 = st.beta_columns(2)
-    with col1:
-        st.subheader('Player 1 - Little_T_REX')
-        st.write(get_player(0, current_round))
-    with col2:
-        st.subheader('Player 2 - Little_Penguin')
-        st.write(get_player(1, current_round))
-    if num_players >= 3:
-        col3, col4 = st.beta_columns(2)
-
+    def get_player(current_player: int):
+        player_name = get_token_name(current_player)
+        col1, col2, col3 = st.beta_columns([1, 1, 4])
+        with col1:
+            st.subheader(f'**Player {current_player + 1} - {player_name}**')
+        with col2:
+            st.image(f"{player_name}.gif", use_column_width=True)
         with col3:
-            st.subheader('Player 3 - Little_Scottie')
-            st.write(get_player(2, current_round))
+            if current_round[player_name + BANKRUPT]:
+                data_list = {
+                    'Position': game_board[current_round[player_name + POS]].name,
+                    'Bankrupt': 'True',
+                }
+            else:
+                position = game_board[current_round[player_name + POS]].name
+                if position == JAIL:
+                    position = position + " (In Jail)" if current_round[
+                        player_name + IN_JAIL] else position + ' (Just visiting)'
+                data_list = {
+                    'Position': position,
+                    'Cash': current_round[player_name + CASH],
+                }
+                if current_round[player_name + GET_OUT_OF_JAIL]:
+                    data_list.update({'Jail Card': True})
+                if current_round[player_name + CHANCE_MOVE]:
+                    data_list.update({'Chance Move': True})
+                data_list.update({
+                    'Win %': round(current_round[player_name + WIN_RATE] * 100, 2),
+                    'Power': current_round[player_name + POWER],
+                })
+            st.write(pd.Series(data_list))
 
-        with col4:
-            if num_players == 4:
-                st.subheader('Player 4 - Little_Ducky')
-                st.write(get_player(3, current_round))
+    for player in range(num_players):
+        get_player(player)
