@@ -6,7 +6,7 @@ authors = ["houfu <houfu@outlook.sg>"]
 
 [tool.poetry.dependencies]
 python = "^3.8.6"
-streamlit = "^0.73.1"
+streamlit = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 

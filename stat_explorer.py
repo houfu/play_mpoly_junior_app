@@ -12,7 +12,7 @@ def stat_explorer(num_players):
     We play 5,000,000 games and see what we can find. 
     Use the radio buttons at the sidebar to change the number of players in the game.
     """)
-    with st.beta_expander('Notes'):
+    with st.expander('Notes'):
         st.write("""
 
         * The games are played under advanced rules -- if a player is bankrupt, the player can sell property 
@@ -129,7 +129,7 @@ def stat_explorer(num_players):
         return visit_chart + rule
 
     st.altair_chart(make_visit_chart(compile_spaces()))
-    with st.beta_expander('Notes'):
+    with st.expander('Notes'):
         st.write(
             """
             * There are four CHANCE spaces in the board. The figure shown here is the visits in mean (total visits

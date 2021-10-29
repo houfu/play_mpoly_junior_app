@@ -63,7 +63,7 @@ def game_explorer(num_players):
 
     """)
 
-    with st.beta_expander('Notes'):
+    with st.expander('Notes'):
         st.write("""
         * Win% values are simulated based on playing 20,000 rounds with the same position.
         * Power ratings are calculated by sum of cash in hand and value of all property in the player's name.
@@ -77,7 +77,7 @@ def game_explorer(num_players):
 
     @st.cache
     def load_game():
-        game = pd.read_csv(f'game_data/{num_players}p/{selected_game_no}.csv')
+        game = pd.read_csv(f'game_data/{num_players}p/{int(selected_game_no)}.csv')
         game.index.name = 'round'
         return game
 
@@ -92,10 +92,11 @@ def game_explorer(num_players):
     st.write("You can use the arrow keys on your keyboard to move when this control is selected.")
 
     @st.cache
-    def load_round():
-        return selected_game.iloc[selected_round_no]
+    def load_round(round: int):
+        return selected_game.iloc[round]
 
-    current_round = load_round()
+    current_round = load_round(selected_round_no)
+    previous_round = load_round(selected_round_no - 1) if selected_round_no > 0 else None
     st.write("""
     ---
     """)
@@ -103,7 +104,7 @@ def game_explorer(num_players):
     st.header('Game Board')
 
     st.subheader('Players')
-    get_player_list(current_round, num_players)
+    get_player_list(current_round, previous_round, num_players)
 
     st.subheader('Notes')
     st.write(current_round['notes'])
@@ -120,7 +121,7 @@ def game_explorer(num_players):
 
 def board_spaces(current_round, num_players):
     def get_row(i):
-        for col in st.beta_columns(4):
+        for col in st.columns(4):
             with col:
                 st.write(f"**{game_board[i].name}**")
                 if game_board[i].color not in [Color.NA, Color.CHANCE]:
@@ -153,14 +154,14 @@ def board_spaces(current_round, num_players):
     get_row(i)
 
 
-def get_player_list(current_round, num_players):
+def get_player_list(current_round, prev_round, num_players):
     def get_player(current_player: int):
         player_name = get_token_name(current_player)
-        col1, col2, col3 = st.beta_columns([1, 1, 4])
+        col1, col2, col3, col4, col5 = st.columns([2, 1, 3, 2, 2])
         with col1:
             st.subheader(f'**Player {current_player + 1} - {player_name}**')
         with col2:
-            st.image(f"{player_name}.gif", use_column_width=True)
+            st.image(f"{player_name}.gif", use_column_width='auto')
         with col3:
             if current_round[player_name + BANKRUPT]:
                 data_list = {
@@ -180,11 +181,21 @@ def get_player_list(current_round, num_players):
                     data_list.update({'Jail Card': True})
                 if current_round[player_name + CHANCE_MOVE]:
                     data_list.update({'Chance Move': True})
-                data_list.update({
-                    'Win %': round(current_round[player_name + WIN_RATE] * 100, 2),
-                    'Power': current_round[player_name + POWER],
-                })
-            st.write(pd.Series(data_list))
+                # data_list.update({
+                #     'Win %': round(current_round[player_name + WIN_RATE] * 100, 2),
+                #     'Power': current_round[player_name + POWER],
+                # })
+            st.write(data_list)
+        with col4:
+            current_win = round(current_round[player_name + WIN_RATE] * 100, 2)
+            prev_win = None if prev_round is None else round(prev_round[player_name + WIN_RATE] * 100, 2)
+            delta = round(current_win - prev_win, 2) if prev_win else None
+            st.metric('Win %', current_win, delta)
+        with col5:
+            current_power = current_round[player_name + POWER]
+            prev_power = None if prev_round is None else prev_round[player_name + POWER]
+            delta = int(current_power - prev_power) if prev_win else None
+            st.metric('Power', int(current_power), delta)
 
     for player in range(num_players):
         get_player(player)
